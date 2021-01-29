@@ -1,0 +1,14 @@
+numpy
+scipy
+xarray
+pandas
+tqdm
+glob
+os
+datetime
+csv
+re
+argparse
+warnings
+pycurrents
+rti_python
