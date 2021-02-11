@@ -1,0 +1,23 @@
+* Undocumented features
+** TODO bin to grid (z.grid format?)
+** TODO info.adcp
+** TODO platform velocity correction
+*** TODO Options
+*** TODO File formats for GPS
+** TODO Quality control
+*** TODO Flagging system
+*** TODO Critical/non critical problems
+** TODO Output format
+* Remove code related to removed functionnality
+** DONE Selected values in load_rdi_binary
+   CLOSED: [2021-02-11 Thu 08:40]
+* Clarify code segments
+** DONE Sparse data flagging
+   CLOSED: [2021-02-11 Thu 09:24]
+   Replace this feature with a manual specification of the sparse data
+   depth on command line input. This more in line with the rest of the
+   code's philosophy and les bug prone.
+* Incomplete/future features
+** TODO Scaling of RDI/RTI correlation and amplitude data
+** TODO Parellelizing RTB reader with dask
+** TODO Checking the ADCP for lat-lon data for platform vel correction

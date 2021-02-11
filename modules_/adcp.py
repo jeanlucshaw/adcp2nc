@@ -1,7 +1,6 @@
 from pycurrents.adcp.rdiraw import Multiread
 import xarray as xr
 import numpy as np
-# import mxtoolbox.process as ps
 from .functions_ import rotate_frame, circular_distance, dayofyear2dt
 import warnings
 from scipy.stats import circmean
@@ -76,7 +75,7 @@ def adcp_init(depth, time):
         attrs = {'Conventions': 'CF-1.8',
                  'title': '',
                  'institution': '',
-                 'source': 'ADCP data, processed with https://github.com/jeanlucshaw/mxtoolbox',
+                 'source': 'ADCP data, processed with https://github.com/jeanlucshaw/adcp2nc',
                  'description': '',
                  'history': '',
                  'platform': '',
@@ -212,10 +211,9 @@ def adcp_qc(dataset,
     depth : float
         Fixed depth used for removing side lobe contamination.
     theta_1 : float
-        Horizontally rotate velocity before motion correction by this value.
+        Horizontally rotate velocity before motion correction by this value (degrees).
     theta_2 : float
-        Horizontally rotate velocity after motion correction by this value.
-
+        Horizontally rotate velocity after motion correction by this value (degrees).
 
     Note
     ----
@@ -381,7 +379,7 @@ def adcp_qc(dataset,
 
     # Second optional rotation to place in chosen reference frame
     if theta_2 not in [None, 0]:
-        u, v = ps.rotate_frame(ds.u.values, ds.v.values, theta_2, units='deg')
+        u, v = rotate_frame(ds.u.values, ds.v.values, theta_2, units='deg')
         ds['u'].values = u
         ds['v'].values = v
 
@@ -389,13 +387,11 @@ def adcp_qc(dataset,
 
 
 def load_rdi_binary(files,
-                     adcptype,
-                     force_dw=False,
-                     force_up=False,
-                     min_depth=0,
-                     selected=None,
-                     clip=0,
-                     t_offset=0):
+                    adcptype,
+                    force_dw=False,
+                    force_up=False,
+                    min_depth=0,
+                    t_offset=0):
     """
     Read Teledyne RDI binary ADCP data to xarray.
 
@@ -427,63 +423,61 @@ def load_rdi_binary(files,
                       % data.trans['coordsystem'])
 
     # Get data set size and configuration
-    if selected is None:
-        selected = range(0, len(data.dday) - clip)
-    t = dayofyear2dt(data.dday[selected] + t_offset, data.yearbase)
+    t = dayofyear2dt(data.dday + t_offset, data.yearbase)
 
     # Configure depth of bin centers
     if force_dw or force_up:
 
         # downwards processing
         if force_dw:
-            selected = data.XducerDepth >= min_depth
-            z = data.dep + np.nanmean(data.XducerDepth[selected])  # depth of the bins
+            z = data.dep + np.nanmean(data.XducerDepth)  # depth of the bins
             looking = 'down'
 
         # upwards processing
         else:
-            selected = data.XducerDepth >= min_depth
-            z = np.nanmean(data.XducerDepth[selected]) - data.dep  # depth of the bins
+            z = np.nanmean(data.XducerDepth) - data.dep  # depth of the bins
             looking = 'up'
 
     # downwards processing
     elif not data.sysconfig['up']:
-        selected = data.XducerDepth >= min_depth
-        z = data.dep + np.nanmean(data.XducerDepth[selected])  # depth of the bins
+        z = data.dep + np.nanmean(data.XducerDepth)  # depth of the bins
         looking = 'down'
 
     # upwards processing
     elif data.sysconfig['up']:
-        selected = data.XducerDepth >= min_depth
-        z = np.nanmean(data.XducerDepth[selected]) - data.dep  # depth of the bins
+        z = np.nanmean(data.XducerDepth) - data.dep  # depth of the bins
         looking = 'up'
     else:
         raise ValueError('Could not determine ADCP orientation.')
 
     # Init xarray
-    t = t[selected]
     ds = adcp_init(z, t)
 
     # Set up xarray
-    ds['u'].values = np.asarray(data.vel1[selected][:].T)
-    ds['v'].values = np.asarray(data.vel2[selected][:].T)
-    ds['w'].values = np.asarray(data.vel3[selected][:].T)
-    ds['e'].values = np.asarray(data.vel4[selected][:].T)
-    ds['corr'].values = np.asarray(np.mean(data.cor, axis=2)[selected][:].T)
-    ds['amp'].values = np.asarray(np.mean(data.amp, axis=2)[selected][:].T)
-    ds['pg'].values = np.float64(np.asarray(data.pg4[selected][:].T))
-    ds['depth'].values = np.asarray(data.XducerDepth[selected])
-    ds['heading'].values = np.asarray(data.heading[selected])
-    ds['roll_'].values = np.asarray(data.roll[selected])
-    ds['pitch'].values = np.asarray(data.pitch[selected])
-    ds['temp'].values = np.asarray(data.temperature[selected])
+    ds['u'].values = np.asarray(data.vel1.T)
+    ds['v'].values = np.asarray(data.vel2.T)
+    ds['w'].values = np.asarray(data.vel3.T)
+    ds['e'].values = np.asarray(data.vel4.T)
+    ds['corr'].values = np.asarray(np.mean(data.cor, axis=2).T)
+    ds['amp'].values = np.asarray(np.mean(data.amp, axis=2).T)
+    ds['pg'].values = np.float64(np.asarray(data.pg4.T))
+    ds['depth'].values = np.asarray(data.XducerDepth)
+    ds['heading'].values = np.asarray(data.heading)
+    ds['roll_'].values = np.asarray(data.roll)
+    ds['pitch'].values = np.asarray(data.pitch)
+    ds['temp'].values = np.asarray(data.temperature)
 
     # Bottom track data if it exists
     if not (data.bt_vel.data == 0).all():
-        ds['u_bt'].values = data.bt_vel.data[selected, 0]
-        ds['v_bt'].values = data.bt_vel.data[selected, 1]
-        ds['w_bt'].values = data.bt_vel.data[selected, 2]
-        ds['range_bt'].values = np.nanmean(data.bt_depth.data[selected, :], axis=-1)
+        ds['u_bt'].values = data.bt_vel.data[:, 0]
+        ds['v_bt'].values = data.bt_vel.data[:, 1]
+        ds['w_bt'].values = data.bt_vel.data[:, 2]
+        ds['range_bt'].values = np.nanmean(data.bt_depth.data, axis=-1)
+
+    # Remove data shallower than min depth
+    if min_depth > 0:
+        selected = data.XducerDepth >= min_depth
+        ds = ds.sel(time=selected)
 
     # If no bottom track data, drop variables
     else:

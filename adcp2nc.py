@@ -65,14 +65,12 @@ binaries. This csv file should have the format
 See Also
 --------
 
-   * mxtoolbox.read.adcp
-   * mxtoolbox.read.rtitools
    * pycurrents.adcp.rdiraw.Multiread
 
 """
-from proc_.adcp import *
-from proc_.rtitools import load_rtb_binary
-from proc_.functions_ import *
+from modules_.adcp import *
+from modules_.rtitools import load_rtb_binary
+from modules_.functions_ import *
 from datetime import datetime
 import xarray as xr
 import numpy as np
@@ -101,7 +99,7 @@ if __name__ == '__main__':
                         help='''String designating type of adcp. This
                         is fed to CODAS Multiread or switches to the RTI
                         binary reader. Must be one
-                        of `wh`, `os`, `bb` or `sw`''')
+                        of `wh`, `os`, `bb`, `nb` or `sw`''')
     # deployment nickname
     parser.add_argument('name',
                         metavar='3 - name',
@@ -129,7 +127,7 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--depth',
                         metavar='',
                         type=float,
-                        help='Water depth (scalar)')
+                        help='Water depth (scalar) used for sidelobe correction.')
     parser.add_argument('-D', '--force-dw',
                         action='store_true',
                         help='Force downward looking processing.')
@@ -143,10 +141,6 @@ if __name__ == '__main__':
     parser.add_argument('-g', '--gps-file',
                         metavar='',
                         help='GPS netcdf file path and name.')
-    parser.add_argument('-i', '--include-temp',
-                        action='store_true',
-                        help='''Include temperature. Otherwise, default behavior
-                        is to save it to a difference netcdf file.''')
     parser.add_argument('-I', '--info',
                         action='store_true',
                         help='''Show information about the processed
@@ -197,10 +191,10 @@ if __name__ == '__main__':
                         provided for downward looking data. If data is upward looking,
                         the average depth of the instrument is used as distance to
                         boundary.''')
-    parser.add_argument('-S', '--flag-sparse',
-                        action='store_true',
-                        help='''Flag data beyond depths where 10/100 of the data
-                        seem like bad data (4).''')
+    parser.add_argument('-S', '--sparse-depth',
+                        help='''Flag as bad (4) data beyond this depth and away from the
+                        ADCP. Useful for flagging passing data at depths where the ADCP's
+                        perfomance is usually poor.''')
     parser.add_argument('-T', '--mindep',
                         metavar='',
                         type=float,
@@ -284,6 +278,9 @@ if __name__ == '__main__':
         abs_path = os.path.abspath(args.files)
     path = '%s/' % os.path.dirname(abs_path)
 
+    """
+    Binary reading and quality control
+    """
     # Read teledyne ADCP data
     if args.adcptype in ['wh', 'bb', 'os']:
         ds = load_rdi_binary(args.files,
@@ -324,12 +321,9 @@ if __name__ == '__main__':
     if qc:
         ds = adcp_qc(ds, **qc_kw)
 
-    # Find maximum depth where 10% of data is good
-    u_good = ds.u.where(ds.flags < 2).values
-    Ng = np.asarray([np.isfinite(u_good[ii, :]).sum()
-                     for ii in range(ds.z.size)])
-    z_max = ds.z.values[np.argmin(np.abs(Ng.max() * 0.1 - Ng))]
-
+    """
+    Sparse data flagging, binning to z grid, and vertical interpolation
+    """
     # Interpolate to z grid
     if gridf:
         # Bin to z grid
@@ -350,10 +344,15 @@ if __name__ == '__main__':
         ds['flags'] = ds.flags.where(np.isfinite(ds.flags), 9)
 
     # Flag sparse data
-    if args.flag_sparse:
-        cond = ds.z < z_max if ds.looking == 'down' else ds.z > z_max
-        ds['flags'] = ds.flags.where(cond, 4)
+    if args.sparse_depth:
+        sparse_condition = (ds.z < args.sparse_depth
+                            if ds.looking == 'down'
+                            else ds.z > args.sparse_depth)
+        ds['flags'] = ds.flags.where(sparse_condition, 4)
 
+    """
+    Final data formatting and global metadata additions
+    """
     # Sort by time and drop duplicates
     ds = xr_unique(ds.sortby('time'), 'time')
 
