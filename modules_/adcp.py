@@ -165,8 +165,8 @@ def adcp_init(depth, time):
 
     # Set quality flag attributes
     ds.flags.attrs['long_name'] = 'Quality control flags'
-    ds.flags.attrs['flag_values'] = '0 1 3 4 9'
-    ds.flags.attrs['flag_meanings'] = 'raw good questionable bad missing'
+    ds.flags.attrs['flag_values'] = '0 1 3 4 5 9'
+    ds.flags.attrs['flag_meanings'] = 'raw good questionable bad modified missing'
 
     return ds
 
@@ -226,6 +226,7 @@ def adcp_qc(dataset,
        * 1: datum seems good
        * 3: datum seems questionable
        * 4: datum seems bad
+       * 5: datum has been modified
        * 9: datum is missing
 
        Data are marked as questionable if they fail only the 4beam

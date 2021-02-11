@@ -85,4 +85,6 @@ and once the file is generated
 $ adcp2nc /path/to/teledyne_workhorse.000 wh sample_data -z z.grid
 ```
 
-processes with vertical binning.
+processes with vertical binning. Another way to smooth data is to fill gaps
+with vertical linear interpolation. This is achieved by calling the `-f`
+option and results in data flagged as modified (5).

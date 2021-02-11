@@ -1,7 +1,9 @@
 * Undocumented features
-** TODO bin to grid (z.grid format?)
+** DONE bin to grid (z.grid format?)
+   CLOSED: [2021-02-11 Thu 10:09]
 ** TODO info.adcp
-** TODO platform velocity correction
+** DONE platform velocity correction
+   CLOSED: [2021-02-11 Thu 10:09]
 *** TODO Options
 *** TODO File formats for GPS
 ** TODO Quality control
