@@ -1,7 +1,8 @@
 * Undocumented features
 ** DONE bin to grid (z.grid format?)
    CLOSED: [2021-02-11 Thu 10:09]
-** TODO info.adcp
+** DONE info.adcp2nc
+   CLOSED: [2021-02-12 Fri 10:08]
 ** DONE platform velocity correction
    CLOSED: [2021-02-11 Thu 10:09]
 *** TODO Options
@@ -9,7 +10,8 @@
 ** TODO Quality control
 *** TODO Flagging system
 *** TODO Critical/non critical problems
-** TODO Output format
+** DONE Output format
+   CLOSED: [2021-02-12 Fri 10:08]
 * Remove code related to removed functionnality
 ** DONE Selected values in load_rdi_binary
    CLOSED: [2021-02-11 Thu 08:40]
@@ -23,3 +25,7 @@
 ** TODO Scaling of RDI/RTI correlation and amplitude data
 ** TODO Parellelizing RTB reader with dask
 ** TODO Checking the ADCP for lat-lon data for platform vel correction
+* References section
+** TODO Teledyne ADCP primer
+** TODO Teledyne ADCP data format
+** TODO Rowetech wiki

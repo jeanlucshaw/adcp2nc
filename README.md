@@ -37,6 +37,21 @@ or
 $ adcp2nc /path/to/teledyne_workhorse.000 wh sample_data
 ```
 
+The output will be a netCDF file with the name structure `nickname`_`start
+date`-`end date`_`ADCP brand (rdi or rti)`.nc . Inside, the data are
+organised following [CF
+conventions](https://cfconventions.org/). Additional global attributes can
+be set programmatically in the netCDF by creating a file name
+`info.adcp2nc` next to the raw binaries before processing. This file should
+be a `csv` structured as follows
+
+```
+attribute,value
+name_1,value_1
+name_2,value_2
+...,...
+```
+
 ## Features
 
 ### Platform velocity correction
