@@ -196,7 +196,8 @@ def read_rtb_file(file_path):
                        - ens.AncillaryData.FirstBinRange
                        - np.arange(0, bin_count * bin_size, bin_size)).round(2)
     else:
-        z = np.asarray(ens.AncillaryData.FirstBinRange
+        z = np.asarray(ds.depth.mean()
+                       + ens.AncillaryData.FirstBinRange
                        + np.arange(0, bin_count * bin_size, bin_size)).round(2)
 
     # Roll near zero means downwards (like RDI)
